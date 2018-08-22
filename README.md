@@ -74,7 +74,7 @@ React Native wrapper for functionality of https://developers.google.com/ml-kit/
 
 import RNMlKit from 'react-native-firebase-mlkit';
 
-export class TextDetectionComponent extends PureComponent {
+export class textRecognition extends Component {
   ...
 
   async takePicture() {

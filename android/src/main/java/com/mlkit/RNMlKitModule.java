@@ -65,51 +65,27 @@ public class RNMlKitModule extends ReactContextBaseJavaModule {
      * @return
      */
     private WritableArray getDataAsArray(FirebaseVisionText firebaseVisionText) {
-        List<FirebaseVisionText.Block> blocks = firebaseVisionText.getBlocks();
-        if (blocks.size() == 0) {
-            return "[]";
-        }
-        List<Map<String, Object>> blks = new ArrayList<>();
-        for (int i = 0; i < blocks.size(); i++) {
-            FirebaseVisionText.Block block = blocks.get(i);
-            StringBuilder sb = new StringBuilder();
-            for (Point p : block.getCornerPoints()) {
-                sb.append(p);
-            }
+        WritableArray data = Arguments.createArray();
+        WritableMap info = Arguments.createMap();
+        WritableMap coordinates = Arguments.createMap();
 
-            Map<String, Object> blk = new HashMap<>();
-            blk.put("text", block.getText());
-            blk.put("lines", new LinkedList<>());
-            blk.put("contactPoints", Arrays.asList(block.getCornerPoints()[0], block.getCornerPoints()[1]));
-            blks.add(blk);
+        for (FirebaseVisionText.TextBlock block: firebaseVisionText.getTextBlocks()) {
+            info = Arguments.createMap();
+            coordinates = Arguments.createMap();
 
-            List<FirebaseVisionText.Line> lines = block.getLines();
-            for (int j = 0; j < lines.size(); j++) {
-                FirebaseVisionText.Line line = lines.get(j);
+            Rect boundingBox = block.getBoundingBox();
 
-                Map<String, Object> ln = new HashMap<>();
-                ln.put("text", line.getText());
-                ln.put("elements", new LinkedList<>());
-                ln.put("contactPoints", Arrays.asList(line.getCornerPoints()[0], line.getCornerPoints()[1]));
-                ((List) blk.get("lines")).add(ln);
+            coordinates.putInt("top", boundingBox.top);
+            coordinates.putInt("left", boundingBox.left);
+            coordinates.putInt("width", boundingBox.width());
+            coordinates.putInt("height", boundingBox.height());
 
-                List<FirebaseVisionText.Element> elements = line.getElements();
-                for (int k = 0; k < elements.size(); k++) {
-
-                    Map<String, Object> el = new HashMap<>();
-                    FirebaseVisionText.Element element = elements.get(k);
-                    el.put("text", element.getText());
-                    el.put("contactPoints", Arrays.asList(element.getCornerPoints()[0], element.getCornerPoints()[1]));
-                    ((List) ln.get("elements")).add(el);
-                }
-            }
+            info.putMap("bounding", coordinates);
+            info.putString("text", block.getText());
+            data.pushMap(info);
         }
 
-        try {
-            return (new ObjectMapper().writeValueAsString(blks));
-        } catch (JsonProcessingException e) {
-            return ("Error Reading Data", e);
-        }
+        return data;
     }
 
 
