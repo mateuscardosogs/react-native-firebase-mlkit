@@ -1,83 +1,73 @@
 
-package com.reactlibrary;
+package com.mlkit;
 
-import android.graphics.Point;
-import android.net.Uri;
+import android.graphics.Rect;
 import android.support.annotation.NonNull;
-import android.util.Log;
 
+import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.facebook.react.bridge.WritableArray;
+import com.facebook.react.bridge.WritableMap;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.firebase.FirebaseApp;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.ml.vision.FirebaseVision;
 import com.google.firebase.ml.vision.common.FirebaseVisionImage;
 import com.google.firebase.ml.vision.text.FirebaseVisionText;
-import com.google.firebase.ml.vision.text.FirebaseVisionTextDetector;
+import com.google.firebase.ml.vision.text.FirebaseVisionTextRecognizer;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.io.IOException;
 
 public class RNMlKitModule extends ReactContextBaseJavaModule {
 
   private final ReactApplicationContext reactContext;
+  private final FirebaseVisionTextRecognizer detector = FirebaseVision.getInstance().getOnDeviceTextRecognizer();
+  private FirebaseVisionImage image;
 
   public RNMlKitModule(ReactApplicationContext reactContext) {
     super(reactContext);
     this.reactContext = reactContext;
-
-  }
-
-  @Override
-  public String getName() {
-    return "RNMlKit";
   }
 
   @ReactMethod
-  public void detect(String pathStr, final Promise promise) {
-      try {
-          FirebaseApp.initializeApp(this.reactContext);
-          boolean a = new File(pathStr).exists();
-          Uri path = Uri.fromFile(new File(pathStr));
-          FirebaseVisionImage image = FirebaseVisionImage.fromFilePath(this.reactContext, path);
-          FirebaseVisionTextDetector detector = FirebaseVision.getInstance().getVisionTextDetector();
-          detector.detectInImage(image).addOnSuccessListener(
-                  new OnSuccessListener<FirebaseVisionText>() {
-                      @Override
-                      public void onSuccess(FirebaseVisionText texts) {
-                          try {
-                              processTextRecognitionResult(texts, promise);
-                          } catch (Exception e) {
-                              promise.reject("Error data parsing", e);
-                          }
-                      }
-                  })
-                  .addOnFailureListener(
-                          new OnFailureListener() {
-                              @Override
-                              public void onFailure(@NonNull Exception e) {
-                                  promise.reject("Error image detecting", e);
-                              }
-                          });
-      } catch (Exception e) {
-          promise.reject("Error ", e);
-      }
-  }
+    public void detectFromUri(String uri, final Promise promise) {
+        try {
+            image = FirebaseVisionImage.fromFilePath(this.reactContext, android.net.Uri.parse(uri));
+            Task<FirebaseVisionText> result =
+                    detector.processImage(image)
+                            .addOnSuccessListener(new OnSuccessListener<FirebaseVisionText>() {
+                                @Override
+                                public void onSuccess(FirebaseVisionText firebaseVisionText) {
+                                    promise.resolve(getDataAsArray(firebaseVisionText));
+                                }
+                            })
+                            .addOnFailureListener(
+                                    new OnFailureListener() {
+                                        @Override
+                                        public void onFailure(@NonNull Exception e) {
+                                            e.printStackTrace();
+                                            promise.reject(e);
+                                        }
+                                    });;
+        } catch (IOException e) {
+            promise.reject(e);
+            e.printStackTrace();
+        }
+    }
 
-    private void processTextRecognitionResult(FirebaseVisionText texts, Promise promise) {
-        List<FirebaseVisionText.Block> blocks = texts.getBlocks();
+    /**
+     * Converts firebaseVisionText into a map
+     *
+     * @param firebaseVisionText
+     * @return
+     */
+    private WritableArray getDataAsArray(FirebaseVisionText firebaseVisionText) {
+        List<FirebaseVisionText.Block> blocks = firebaseVisionText.getBlocks();
         if (blocks.size() == 0) {
-            promise.resolve("[]");
+            return "[]";
         }
         List<Map<String, Object>> blks = new ArrayList<>();
         for (int i = 0; i < blocks.size(); i++) {
@@ -116,9 +106,15 @@ public class RNMlKitModule extends ReactContextBaseJavaModule {
         }
 
         try {
-            promise.resolve(new ObjectMapper().writeValueAsString(blks));
+            return (new ObjectMapper().writeValueAsString(blks));
         } catch (JsonProcessingException e) {
-            promise.reject("Error Reading Data", e);
+            return ("Error Reading Data", e);
         }
     }
+
+
+  @Override
+  public String getName() {
+    return "RNMlKit";
+  }
 }

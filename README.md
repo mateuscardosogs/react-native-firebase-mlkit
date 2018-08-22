@@ -32,20 +32,61 @@ React Native wrapper for functionality of https://developers.google.com/ml-kit/
   	project(':react-native-firebase-mlkit').projectDir = new File(rootProject.projectDir, 	'../node_modules/react-native-firebase-mlkit/android')
   	```
 3. Insert the following lines inside the dependencies block in `android/app/build.gradle`:
-  	```
-      compile project(':react-native-firebase-mlkit')
-  	```
+
+    ```
+    ...
+    dependencies {
+        implementation 'com.google.firebase:firebase-core:16.0.1'
+        implementation 'com.google.firebase:firebase-ml-vision:17.0.0'
+
+        implementation (project(':react-native-firebase-mlkit')) {
+            exclude group: 'com.google.firebase'
+        }
+    }
+
+    // Place this line at the end of file
+
+    apply plugin: 'com.google.gms.google-services'
+
+    // Work around for onesignal-gradle-plugin compatibility
+    com.google.gms.googleservices.GoogleServicesPlugin.config.disableVersionCheck = true
+    ```
+
+4. Insert the following lines inside the dependencies block in `android/build.gradle`:
+
+    ```
+    buildscript {
+        repositories {
+            google()
+            ...
+        }
+        dependencies {
+            classpath 'com.android.tools.build:gradle:3.0.1'
+            classpath 'com.google.gms:google-services:4.0.2' // google-services plugin
+        }
+    }
+    ```
 
 
-## Usage
+## Usage (Example using [react-native-camera](https://github.com/react-native-community/react-native-camera))
+
 ```javascript
+
 import RNMlKit from 'react-native-firebase-mlkit';
 
-const pathOfImage = `the_path_of_your_image_to_extract`
+export class TextDetectionComponent extends PureComponent {
+  ...
 
-RNMlKit.detect(pathOfImage).then(result => {
-	// do something with the data
-	console.log(JSON.parse(result))
-})
+  async takePicture() {
+    if (this.camera) {
+      const options = { quality: 0.5, base64: true, skipProcessing: true, forceUpOrientation: true };
+      const data = await this.camera.takePictureAsync(options);
+      const textRecognition = await RNTextDetector.detectFromUri(data.uri);
+      console.log('Text Recognition', textRecognition);
+    }
+  };
+
+  ...
+}
 ```
   
