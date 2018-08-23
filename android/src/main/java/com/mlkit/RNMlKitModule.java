@@ -20,6 +20,7 @@ import com.google.firebase.ml.vision.text.FirebaseVisionText;
 import com.google.firebase.ml.vision.text.FirebaseVisionTextRecognizer;
 
 import java.io.IOException;
+import java.util.List;
 
 public class RNMlKitModule extends ReactContextBaseJavaModule {
 
@@ -68,20 +69,36 @@ public class RNMlKitModule extends ReactContextBaseJavaModule {
         WritableArray data = Arguments.createArray();
         WritableMap info = Arguments.createMap();
         WritableMap coordinates = Arguments.createMap();
+        List<FirebaseVisionText.TextBlock> blocks = firebaseVisionText.getTextBlocks();
 
-        for (FirebaseVisionText.TextBlock block: firebaseVisionText.getTextBlocks()) {
+        if (blocks.size() == 0) {
+            return data;
+        }
+
+        for (int i = 0; i < blocks.size(); i++) {
+            List<FirebaseVisionText.Line> lines = blocks.get(i).getLines();
             info = Arguments.createMap();
             coordinates = Arguments.createMap();
 
-            Rect boundingBox = block.getBoundingBox();
+            Rect boundingBox = blocks.get(i).getBoundingBox();
 
             coordinates.putInt("top", boundingBox.top);
             coordinates.putInt("left", boundingBox.left);
             coordinates.putInt("width", boundingBox.width());
             coordinates.putInt("height", boundingBox.height());
 
-            info.putMap("bounding", coordinates);
-            info.putString("text", block.getText());
+            info.putMap("blockCoordinates", coordinates);
+            info.putString("blockText", blocks.get(i).getText());
+
+            for (int j = 0; j < lines.size(); j++) {
+                List<FirebaseVisionText.Element> elements = lines.get(j).getElements();
+                info.putString("lineText", lines.get(j).getText());
+
+                for (int k = 0; k < elements.size(); k++) {
+                    info.putString("elementText", elements.get(k).getText());
+                }
+            }
+
             data.pushMap(info);
         }
 
