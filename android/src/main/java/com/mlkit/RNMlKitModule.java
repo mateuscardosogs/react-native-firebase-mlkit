@@ -100,7 +100,6 @@ public class RNMlKitModule extends ReactContextBaseJavaModule {
      */
     private WritableArray processDeviceResult(FirebaseVisionText firebaseVisionText) {
         WritableArray data = Arguments.createArray();
-        data.putString("resultText", firebaseVisionText.getText());
         WritableMap info = Arguments.createMap();
         WritableMap coordinates = Arguments.createMap();
         List<FirebaseVisionText.TextBlock> blocks = firebaseVisionText.getTextBlocks();
@@ -123,6 +122,7 @@ public class RNMlKitModule extends ReactContextBaseJavaModule {
 
             info.putMap("blockCoordinates", coordinates);
             info.putString("blockText", blocks.get(i).getText());
+            info.putString("resultText", firebaseVisionText.getText());
 
             for (int j = 0; j < lines.size(); j++) {
                 List<FirebaseVisionText.Element> elements = lines.get(j).getElements();
