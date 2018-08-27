@@ -1,6 +1,6 @@
 {
   "name": "react-native-firebase-mlkit",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Text Recognition in image for react native using firebase ML Kit",
   "homepage": "https://github.com/mateusc42/react-native-firebase-mlkit",
   "main": "index.js",

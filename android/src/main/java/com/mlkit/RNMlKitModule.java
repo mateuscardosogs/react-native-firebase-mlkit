@@ -100,6 +100,7 @@ public class RNMlKitModule extends ReactContextBaseJavaModule {
      */
     private WritableArray processDeviceResult(FirebaseVisionText firebaseVisionText) {
         WritableArray data = Arguments.createArray();
+        data.putString("resultText", firebaseVisionText.getText());
         WritableMap info = Arguments.createMap();
         WritableMap coordinates = Arguments.createMap();
         List<FirebaseVisionText.TextBlock> blocks = firebaseVisionText.getTextBlocks();
