@@ -3,7 +3,8 @@
 
 #import <React/RCTBridge.h>
 
-#import <Firebase.h>
+#import <FirebaseCore/FirebaseCore.h>
+#import <FirebaseMLVision/FirebaseMLVision.h>
 
 @implementation RNMlKit
 
@@ -38,7 +39,7 @@ RCT_REMAP_METHOD(deviceTextRecognition, deviceTextRecognition:(NSString *)imageP
         FIRVisionImage *handler = [[FIRVisionImage alloc] initWithImage:image];
 
         [textRecognizer processImage:handler completion:^(FIRVisionText *_Nullable result, NSError *_Nullable error) {
-            if (error != nil || result == nil || result.count == 0) {
+            if (error != nil || result == nil) {
                 NSString *errorString = error ? error.localizedDescription : detectionNoResultsMessage;
                 NSDictionary *pData = @{
                                         @"error": [NSMutableString stringWithFormat:@"On-Device text detection failed with error: %@", errorString],
@@ -60,14 +61,6 @@ RCT_REMAP_METHOD(deviceTextRecognition, deviceTextRecognition:(NSString *)imageP
                 NSMutableDictionary *bounding = [NSMutableDictionary dictionary];
                 NSString *blockText = block.text;
 
-                boundingBox = blocks.boundingBox;
-                size = CGSizeMake(boundingBox.size.width * image.size.width, boundingBox.size.height * image.size.height);
-                origin = CGPointMake(boundingBox.origin.x * image.size.width, (1-boundingBox.origin.y)*image.size.height - size.height);
-
-                bounding[@"top"] = @(origin.y);
-                bounding[@"left"] = @(origin.x);
-                bounding[@"width"] = @(size.width);
-                bounding[@"height"] = @(size.height);
                 blocks[@"resultText"] = result.text;
                 blocks[@"blockText"] = block.text;
                 blocks[@"bounding"] = bounding;
