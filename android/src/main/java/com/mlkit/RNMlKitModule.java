@@ -27,157 +27,176 @@ import java.util.ArrayList;
 public class RNMlKitModule extends ReactContextBaseJavaModule {
 
   private final ReactApplicationContext reactContext;
-  private FirebaseVisionImage image;
+  private FirebaseVisionTextRecognizer textDetector;
 
   public RNMlKitModule(ReactApplicationContext reactContext) {
     super(reactContext);
     this.reactContext = reactContext;
   }
 
-    @ReactMethod
-    public void deviceTextRecognition(String uri, final Promise promise) {
-        try {
-            image = FirebaseVisionImage.fromFilePath(this.reactContext, android.net.Uri.parse(uri));
-            FirebaseVisionTextRecognizer detector = FirebaseVision.getInstance().getOnDeviceTextRecognizer();
-            Task<FirebaseVisionText> result =
-                    detector.processImage(image)
-                            .addOnSuccessListener(new OnSuccessListener<FirebaseVisionText>() {
-                                @Override
-                                public void onSuccess(FirebaseVisionText firebaseVisionText) {
-                                    promise.resolve(processDeviceResult(firebaseVisionText));
-                                }
-                            })
-                            .addOnFailureListener(
-                                    new OnFailureListener() {
-                                        @Override
-                                        public void onFailure(@NonNull Exception e) {
-                                            e.printStackTrace();
-                                            promise.reject(e);
-                                        }
-                                    });;
-        } catch (IOException e) {
-            promise.reject(e);
-            e.printStackTrace();
-        }
+  @ReactMethod
+  public void deviceTextRecognition(String uri, final Promise promise) {
+      try {
+          FirebaseVisionImage image = FirebaseVisionImage.fromFilePath(this.reactContext, android.net.Uri.parse(uri));
+          FirebaseVisionTextRecognizer detector = FirebaseVision.getInstance().getOnDeviceTextRecognizer();
+          Task<FirebaseVisionText> result =
+                  detector.processImage(image)
+                          .addOnSuccessListener(new OnSuccessListener<FirebaseVisionText>() {
+                              @Override
+                              public void onSuccess(FirebaseVisionText firebaseVisionText) {
+                                  promise.resolve(processDeviceResult(firebaseVisionText));
+                              }
+                          })
+                          .addOnFailureListener(
+                                  new OnFailureListener() {
+                                      @Override
+                                      public void onFailure(@NonNull Exception e) {
+                                          e.printStackTrace();
+                                          promise.reject(e);
+                                      }
+                                  });;
+      } catch (IOException e) {
+          promise.reject(e);
+          e.printStackTrace();
+      }
+  }
+
+  private FirebaseVisionTextRecognizer getTextRecognizerInstance() {
+    if (this.textDetector == null) {
+      this.textDetector = FirebaseVision.getInstance().getCloudTextRecognizer();
     }
 
-    @ReactMethod
-    public void cloudTextRecognition(String uri, final Promise promise) {
-        try {
-            FirebaseVisionCloudTextRecognizerOptions options =
-                new FirebaseVisionCloudTextRecognizerOptions.Builder()
-                        .setModelType(FirebaseVisionCloudTextRecognizerOptions.SPARSE_MODEL)
-                        .build();
-            FirebaseVisionTextRecognizer detector = FirebaseVision.getInstance().getCloudTextRecognizer();
-            image = FirebaseVisionImage.fromFilePath(this.reactContext, android.net.Uri.parse(uri));
-            Task<FirebaseVisionText> result =
-                    detector.processImage(image)
-                            .addOnSuccessListener(new OnSuccessListener<FirebaseVisionText>() {
-                                @Override
-                                public void onSuccess(FirebaseVisionText firebaseVisionText) {
-                                    promise.resolve(processCloudResult(firebaseVisionText));
-                                }
-                            })
-                            .addOnFailureListener(
-                                    new OnFailureListener() {
-                                        @Override
-                                        public void onFailure(@NonNull Exception e) {
-                                            e.printStackTrace();
-                                            promise.reject(e);
-                                        }
-                                    });;
-        } catch (IOException e) {
-            promise.reject(e);
-            e.printStackTrace();
-        }
+    return this.textDetector;
+  }
+
+  @ReactMethod
+  public void close(final Promise promise) {
+    if(this.textDetector != null) {
+      try {
+        this.textDetector.close();
+        this.textDetector = null;
+        promise.resolve(true);
+      } catch (IOException e) {
+        e.printStackTrace();
+        promise.reject(e);
+      }
     }
+  }
 
-    /**
-     * Converts firebaseVisionText into a map
-     *
-     * @param firebaseVisionText
-     * @return
-     */
-    private WritableArray processDeviceResult(FirebaseVisionText firebaseVisionText) {
-        WritableArray data = Arguments.createArray();
-        WritableMap info = Arguments.createMap();
-        WritableMap coordinates = Arguments.createMap();
-        List<FirebaseVisionText.TextBlock> blocks = firebaseVisionText.getTextBlocks();
+  @ReactMethod
+  public void cloudTextRecognition(String uri, final Promise promise) {
+      try {
+          FirebaseVisionTextRecognizer detector = this.getTextRecognizerInstance();
 
-        if (blocks.size() == 0) {
-            return data;
-        }
+          FirebaseVisionImage image = FirebaseVisionImage.fromFilePath(this.reactContext, android.net.Uri.parse(uri));
+          Task<FirebaseVisionText> result =
+                  detector.processImage(image)
+                          .addOnSuccessListener(new OnSuccessListener<FirebaseVisionText>() {
+                              @Override
+                              public void onSuccess(FirebaseVisionText firebaseVisionText) {
+                                  promise.resolve(processCloudResult(firebaseVisionText));
+                              }
+                          })
+                          .addOnFailureListener(
+                                  new OnFailureListener() {
+                                      @Override
+                                      public void onFailure(@NonNull Exception e) {
+                                          e.printStackTrace();
+                                          promise.reject(e);
+                                      }
+                                  });;
+      } catch (IOException e) {
+          promise.reject(e);
+          e.printStackTrace();
+      }
+  }
 
-        for (int i = 0; i < blocks.size(); i++) {
-            List<FirebaseVisionText.Line> lines = blocks.get(i).getLines();
-            info = Arguments.createMap();
-            coordinates = Arguments.createMap();
+  /**
+   * Converts firebaseVisionText into a map
+   *
+   * @param firebaseVisionText
+   * @return
+   */
+  private WritableArray processDeviceResult(FirebaseVisionText firebaseVisionText) {
+      WritableArray data = Arguments.createArray();
+      WritableMap info = Arguments.createMap();
+      WritableMap coordinates = Arguments.createMap();
+      List<FirebaseVisionText.TextBlock> blocks = firebaseVisionText.getTextBlocks();
 
-            Rect boundingBox = blocks.get(i).getBoundingBox();
+      if (blocks.size() == 0) {
+          return data;
+      }
 
-            coordinates.putInt("top", boundingBox.top);
-            coordinates.putInt("left", boundingBox.left);
-            coordinates.putInt("width", boundingBox.width());
-            coordinates.putInt("height", boundingBox.height());
+      for (int i = 0; i < blocks.size(); i++) {
+          List<FirebaseVisionText.Line> lines = blocks.get(i).getLines();
+          info = Arguments.createMap();
+          coordinates = Arguments.createMap();
 
-            info.putMap("blockCoordinates", coordinates);
-            info.putString("blockText", blocks.get(i).getText());
-            info.putString("resultText", firebaseVisionText.getText());
+          Rect boundingBox = blocks.get(i).getBoundingBox();
 
-            for (int j = 0; j < lines.size(); j++) {
-                List<FirebaseVisionText.Element> elements = lines.get(j).getElements();
-                info.putString("lineText", lines.get(j).getText());
+          coordinates.putInt("top", boundingBox.top);
+          coordinates.putInt("left", boundingBox.left);
+          coordinates.putInt("width", boundingBox.width());
+          coordinates.putInt("height", boundingBox.height());
 
-                for (int k = 0; k < elements.size(); k++) {
-                    info.putString("elementText", elements.get(k).getText());
-                }
-            }
+          info.putMap("blockCoordinates", coordinates);
+          info.putString("blockText", blocks.get(i).getText());
+          info.putString("resultText", firebaseVisionText.getText());
 
-            data.pushMap(info);
-        }
+          for (int j = 0; j < lines.size(); j++) {
+              List<FirebaseVisionText.Element> elements = lines.get(j).getElements();
+              info.putString("lineText", lines.get(j).getText());
 
-        return data;
-    }
+              for (int k = 0; k < elements.size(); k++) {
+                  info.putString("elementText", elements.get(k).getText());
+              }
+          }
 
-    private WritableArray processCloudResult(FirebaseVisionText firebaseVisionText) {
-        WritableArray data = Arguments.createArray();
-        WritableMap info = Arguments.createMap();
-        WritableMap coordinates = Arguments.createMap();
-        List<FirebaseVisionText.TextBlock> blocks = firebaseVisionText.getTextBlocks();
+          data.pushMap(info);
+      }
 
-        if (blocks.size() == 0) {
-            return data;
-        }
+      return data;
+  }
 
-        for (int i = 0; i < blocks.size(); i++) {
-            List<FirebaseVisionText.Line> lines = blocks.get(i).getLines();
-            info = Arguments.createMap();
-            coordinates = Arguments.createMap();
+  private WritableArray processCloudResult(FirebaseVisionText firebaseVisionText) {
+      WritableArray data = Arguments.createArray();
+      WritableMap info = Arguments.createMap();
+      WritableMap coordinates = Arguments.createMap();
+      List<FirebaseVisionText.TextBlock> blocks = firebaseVisionText.getTextBlocks();
 
-            Rect boundingBox = blocks.get(i).getBoundingBox();
+      if (blocks.size() == 0) {
+          return data;
+      }
 
-            coordinates.putInt("top", boundingBox.top);
-            coordinates.putInt("left", boundingBox.left);
-            coordinates.putInt("width", boundingBox.width());
-            coordinates.putInt("height", boundingBox.height());
+      for (int i = 0; i < blocks.size(); i++) {
+          List<FirebaseVisionText.Line> lines = blocks.get(i).getLines();
+          info = Arguments.createMap();
+          coordinates = Arguments.createMap();
 
-            info.putMap("blockCoordinates", coordinates);
-            info.putString("blockText", blocks.get(i).getText());
+          Rect boundingBox = blocks.get(i).getBoundingBox();
 
-            for (int j = 0; j < lines.size(); j++) {
-                List<FirebaseVisionText.Element> elements = lines.get(j).getElements();
-                info.putString("lineText", lines.get(j).getText());
+          coordinates.putInt("top", boundingBox.top);
+          coordinates.putInt("left", boundingBox.left);
+          coordinates.putInt("width", boundingBox.width());
+          coordinates.putInt("height", boundingBox.height());
 
-                for (int k = 0; k < elements.size(); k++) {
-                    info.putString("elementText", elements.get(k).getText());
-                }
-            }
+          info.putMap("blockCoordinates", coordinates);
+          info.putString("blockText", blocks.get(i).getText());
 
-            data.pushMap(info);
-        }
+          for (int j = 0; j < lines.size(); j++) {
+              List<FirebaseVisionText.Element> elements = lines.get(j).getElements();
+              info.putString("lineText", lines.get(j).getText());
 
-        return data;
-    }
+              for (int k = 0; k < elements.size(); k++) {
+                  info.putString("elementText", elements.get(k).getText());
+              }
+          }
+
+          data.pushMap(info);
+      }
+
+      return data;
+  }
 
 
   @Override
