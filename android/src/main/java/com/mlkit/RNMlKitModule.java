@@ -28,6 +28,7 @@ public class RNMlKitModule extends ReactContextBaseJavaModule {
 
   private final ReactApplicationContext reactContext;
   private FirebaseVisionTextRecognizer textDetector;
+  private FirebaseVisionTextRecognizer cloudTextDetector;
 
   public RNMlKitModule(ReactApplicationContext reactContext) {
     super(reactContext);
@@ -38,7 +39,7 @@ public class RNMlKitModule extends ReactContextBaseJavaModule {
   public void deviceTextRecognition(String uri, final Promise promise) {
       try {
           FirebaseVisionImage image = FirebaseVisionImage.fromFilePath(this.reactContext, android.net.Uri.parse(uri));
-          FirebaseVisionTextRecognizer detector = FirebaseVision.getInstance().getOnDeviceTextRecognizer();
+          FirebaseVisionTextRecognizer detector = this.getTextRecognizerInstance();
           Task<FirebaseVisionText> result =
                   detector.processImage(image)
                           .addOnSuccessListener(new OnSuccessListener<FirebaseVisionText>() {
@@ -63,7 +64,7 @@ public class RNMlKitModule extends ReactContextBaseJavaModule {
 
   private FirebaseVisionTextRecognizer getTextRecognizerInstance() {
     if (this.textDetector == null) {
-      this.textDetector = FirebaseVision.getInstance().getCloudTextRecognizer();
+      this.textDetector = FirebaseVision.getInstance().getOnDeviceTextRecognizer();
     }
 
     return this.textDetector;
@@ -81,13 +82,31 @@ public class RNMlKitModule extends ReactContextBaseJavaModule {
         promise.reject(e);
       }
     }
+
+    if(this.cloudTextDetector != null) {
+      try {
+        this.cloudTextDetector.close();
+        this.cloudTextDetector = null;
+        promise.resolve(true);
+      } catch (IOException e) {
+        e.printStackTrace();
+        promise.reject(e);
+      }
+    }
+  }
+
+  private FirebaseVisionTextRecognizer getCloudTextRecognizerInstance() {
+    if (this.cloudTextDetector == null) {
+      this.cloudTextDetector = FirebaseVision.getInstance().getCloudTextRecognizer();
+    }
+
+    return this.cloudTextDetector;
   }
 
   @ReactMethod
   public void cloudTextRecognition(String uri, final Promise promise) {
       try {
-          FirebaseVisionTextRecognizer detector = this.getTextRecognizerInstance();
-
+          FirebaseVisionTextRecognizer detector = this.getCloudTextRecognizerInstance();
           FirebaseVisionImage image = FirebaseVisionImage.fromFilePath(this.reactContext, android.net.Uri.parse(uri));
           Task<FirebaseVisionText> result =
                   detector.processImage(image)
@@ -104,7 +123,7 @@ public class RNMlKitModule extends ReactContextBaseJavaModule {
                                           e.printStackTrace();
                                           promise.reject(e);
                                       }
-                                  });;
+                                  });
       } catch (IOException e) {
           promise.reject(e);
           e.printStackTrace();
