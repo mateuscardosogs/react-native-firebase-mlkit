@@ -19,6 +19,9 @@ import com.google.firebase.ml.vision.text.FirebaseVisionCloudTextRecognizerOptio
 import com.google.firebase.ml.vision.common.FirebaseVisionImage;
 import com.google.firebase.ml.vision.text.FirebaseVisionText;
 import com.google.firebase.ml.vision.text.FirebaseVisionTextRecognizer;
+import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcode;
+import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcodeDetector;
+import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcodeDetectorOptions;
 
 import java.io.IOException;
 import java.util.List;
@@ -33,6 +36,46 @@ public class RNMlKitModule extends ReactContextBaseJavaModule {
   public RNMlKitModule(ReactApplicationContext reactContext) {
     super(reactContext);
     this.reactContext = reactContext;
+  }
+
+  @ReactMethod
+  public void deviceBarcodeRecognition(String uri, final Promise promise) {
+    try {
+      FirebaseVisionBarcodeDetectorOptions options =
+        new FirebaseVisionBarcodeDetectorOptions.Builder()
+        .setBarcodeFormats(FirebaseVisionBarcode. FORMAT_ALL_FORMATS)
+        .build();
+      FirebaseVisionImage image = FirebaseVisionImage.fromFilePath(this.reactContext, android.net.Uri.parse(uri));
+      FirebaseVisionBarcodeDetector detector = FirebaseVision.getInstance()
+        .getVisionBarcodeDetector(options);
+      
+      Task<List<FirebaseVisionBarcode>> result = detector.detectInImage(image)
+        .addOnSuccessListener(new OnSuccessListener<List<FirebaseVisionBarcode>>() {
+            @Override
+            public void onSuccess(List<FirebaseVisionBarcode> barcodes) {
+                WritableArray data = Arguments.createArray();
+                WritableMap info = Arguments.createMap();
+
+                for (FirebaseVisionBarcode barcode: barcodes) {
+                    info = Arguments.createMap();
+                    info.putString("format", barcodeFormat(barcode.getFormat()));
+                    info.putString("value", barcode.getRawValue());
+                    data.pushMap(info);
+                }
+                promise.resolve(data);
+            }
+        })
+        .addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                e.printStackTrace();
+                promise.reject(e);
+            }
+      });
+    } catch (IOException e) {
+      promise.reject(e);
+      e.printStackTrace();
+    }
   }
 
   @ReactMethod
@@ -130,6 +173,53 @@ public class RNMlKitModule extends ReactContextBaseJavaModule {
       }
   }
 
+  private String barcodeFormat(int format) {
+      switch (format) {
+          case FirebaseVisionBarcode.FORMAT_CODE_128:
+              return "CODE_128";
+      
+          case FirebaseVisionBarcode.FORMAT_CODE_39:
+              return "CODE_39";
+      
+          case FirebaseVisionBarcode.FORMAT_CODE_93:
+              return "CODE_93";
+            
+          case FirebaseVisionBarcode.FORMAT_CODABAR:
+              return "CODABAR";
+
+          case FirebaseVisionBarcode.FORMAT_DATA_MATRIX:
+              return "DATA_MATRIX";
+      
+          case FirebaseVisionBarcode.FORMAT_EAN_13:
+              return "EAN_13";
+      
+          case FirebaseVisionBarcode.FORMAT_EAN_8:
+              return "EAN_8";
+      
+          case FirebaseVisionBarcode.FORMAT_ITF:
+              return "ITF";
+      
+          case FirebaseVisionBarcode.FORMAT_QR_CODE:
+              return "QR_CODE";
+      
+          case FirebaseVisionBarcode.FORMAT_UPC_A:
+              return "UPC_A";
+      
+          case FirebaseVisionBarcode.FORMAT_UPC_E:
+              return "UPC_E";
+
+          case FirebaseVisionBarcode.FORMAT_PDF417:
+              return "PDF417";
+      
+          case FirebaseVisionBarcode.FORMAT_AZTEC:
+              return "AZTEC";
+      
+          default:
+            return "UNKNOWN";
+      }
+  }
+
+ 
   /**
    * Converts firebaseVisionText into a map
    *
