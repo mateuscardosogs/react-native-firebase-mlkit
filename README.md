@@ -22,6 +22,7 @@ As of the moment, this wrapper of firebase Ml Kit supports Android and iOS.
     pod 'Firebase/Core'
     pod 'Firebase/MLVision'
     pod 'Firebase/MLVisionTextModel'
+    pod 'Firebase/MLVisionBarcodeModel'
    ```
 
 ### Manual installation
