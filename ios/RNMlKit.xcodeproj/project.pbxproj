@@ -211,8 +211,12 @@
 					"$(PROJECT_DIR)/../../../ios/Frameworks/**",
 					"$(PROJECT_DIR)/../../../ios/Pods/Firebase/**",
 					"$(PROJECT_DIR)/../../../ios/Pods/Headers/Public/**",
+					"$(PROJECT_DIR)/../../../ios/**",
 				);
-				LIBRARY_SEARCH_PATHS = "$(inherited)";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/../../../ios/**",
+				);
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = RNMlKit;
 				SKIP_INSTALL = YES;
@@ -230,8 +234,12 @@
 					"$(PROJECT_DIR)/../../../ios/Frameworks/**",
 					"$(PROJECT_DIR)/../../../ios/Pods/Firebase/**",
 					"$(PROJECT_DIR)/../../../ios/Pods/Headers/Public/**",
+					"$(PROJECT_DIR)/../../../ios/**",
 				);
-				LIBRARY_SEARCH_PATHS = "$(inherited)";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/../../../ios/**",
+				);
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = RNMlKit;
 				SKIP_INSTALL = YES;

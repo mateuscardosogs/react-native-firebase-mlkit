@@ -22,6 +22,7 @@ As of the moment, this wrapper of firebase Ml Kit supports Android and iOS.
     pod 'Firebase/Core'
     pod 'Firebase/MLVision'
     pod 'Firebase/MLVisionTextModel'
+    pod 'Firebase/MLVisionBarcodeModel'
    ```
 
 ### Manual installation
@@ -44,7 +45,7 @@ Error: MLVisionTextModel duplicate symbols with React Native
 
 #### Android
 
-1. Open up `android/app/src/main/java/[...]/MainApplication.java`
+1. Open up `android/app/src/main/java/[...]/MainActivity.java`
   - Add `import com.mlkit.RNMlKitPackage;` to the imports at the top of the file
   - Add `new RNMlKitPackage()` to the list returned by the `getPackages()` method
 2. Append the following lines to `android/settings.gradle`:
