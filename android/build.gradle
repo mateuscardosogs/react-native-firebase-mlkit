@@ -32,9 +32,7 @@ repositories {
 }
 
 dependencies {
-  def googlePlayServicesVersion = rootProject.hasProperty('googlePlayServicesVersion') ? rootProject.googlePlayServicesVersion : DEFAULT_GOOGLE_PLAY_SERVICES_VERSION
-
-  implementation "com.google.firebase:firebase-core:$googlePlayServicesVersion"
-  implementation "com.google.firebase:firebase-ml-vision:$googlePlayServicesVersion"
+  implementation "com.google.firebase:firebase-core:15.0.2"
+  implementation "com.google.firebase:firebase-ml-vision:15.0.0"
   implementation "com.facebook.react:react-native:+"
 }
