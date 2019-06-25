@@ -1,4 +1,6 @@
 
+def DEFAULT_SUPPORT_LIB_VERSION             = "26.1.0"
+
 buildscript {
     repositories {
         jcenter()
@@ -30,7 +32,9 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.google.firebase:firebase-core:+'
-    implementation 'com.google.firebase:firebase-ml-vision:+'
-    implementation 'com.facebook.react:react-native:+'
+  def googlePlayServicesVersion = rootProject.hasProperty('googlePlayServicesVersion') ? rootProject.googlePlayServicesVersion : DEFAULT_GOOGLE_PLAY_SERVICES_VERSION
+
+  implementation "com.google.firebase:firebase-core:$googlePlayServicesVersion"
+  implementation "com.google.firebase:firebase-ml-vision:$googlePlayServicesVersion"
+  implementation "com.facebook.react:react-native:+"
 }
